@@ -1,0 +1,58 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ecommerce
+
+#  datasource:
+#    url: jdbc:postgresql://localhost:5432/ecommerce
+#    username: ecommerce
+#    password: ecommerce
+#    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    show-sql: true
+    hibernate:
+      ddl-auto: validate         # keep schema via Flyway, not auto-generate
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+# Swagger / OpenAPI (springdoc)
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Simple JWT placeholders (move secret to env var in prod)
+security:
+  jwt:
+    issuer: "ecommerce-api"
+    secret: "CHANGE_ME_DEV_SECRET"    # e.g., set env var JWT_SECRET and reference it here
+    access-token-ttl-minutes: 60
+
+# CORS defaults for when you add a frontend
+app:
+  cors:
+    allowed-origins:
+      - "http://localhost:5173"       # React dev server
+      - "http://localhost:4200"       # Angular dev server
+    allowed-methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS"
+    allowed-headers: "*"
+    allow-credentials: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
