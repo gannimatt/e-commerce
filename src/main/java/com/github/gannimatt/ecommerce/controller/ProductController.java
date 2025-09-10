@@ -2,6 +2,10 @@ package com.github.gannimatt.ecommerce.controller;
 
 import com.github.gannimatt.ecommerce.entity.Product;
 import com.github.gannimatt.ecommerce.service.ProductService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 import com.github.gannimatt.ecommerce.dto.*;
 import jakarta.validation.Valid;
@@ -18,10 +22,10 @@ public class ProductController {
         this.service = service;
     }
 
-    @GetMapping
-    public List<ProductResponse> all() {
-        return service.getAll();
-    }
+//    @GetMapping
+//    public List<ProductResponse> all() {
+//        return service.getAll();
+//    }
 
     @GetMapping("/{id}")
     public ProductResponse getById(@PathVariable Long id) {
@@ -42,4 +46,12 @@ public class ProductController {
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }
+
+    @GetMapping
+    public Page<ProductResponse> list(
+            @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) String q) {
+        return service.search(q, pageable);
+    }
+
 }
