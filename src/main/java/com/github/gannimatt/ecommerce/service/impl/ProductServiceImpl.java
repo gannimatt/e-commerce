@@ -4,10 +4,12 @@ import com.github.gannimatt.ecommerce.entity.Product;
 import com.github.gannimatt.ecommerce.exception.NotFoundException;
 import com.github.gannimatt.ecommerce.repository.ProductRepository;
 import com.github.gannimatt.ecommerce.service.ProductService;
-import com.github.gannimatt.ecommerce.util.ProductMapper;
+import com.github.gannimatt.ecommerce.mapper.ProductMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.github.gannimatt.ecommerce.dto.*;
-import static com.github.gannimatt.ecommerce.util.ProductMapper.*;
+import static com.github.gannimatt.ecommerce.mapper.ProductMapper.*;
 
 import java.util.List;
 
@@ -49,4 +51,13 @@ public class ProductServiceImpl implements ProductService {
         if (!repo.existsById(id)) throw new NotFoundException("Product " + id + " not found");
         repo.deleteById(id);
     }
+
+    @Override
+    public Page<ProductResponse> search(String q, Pageable pageable) {
+        Page<Product> page = (q == null || q.isBlank())
+                ? repo.findAll(pageable)
+                : repo.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(q, q, pageable);
+        return page.map(ProductMapper::toResponse);
+    }
+
 }
