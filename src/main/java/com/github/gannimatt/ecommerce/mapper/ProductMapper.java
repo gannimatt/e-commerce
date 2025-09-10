@@ -1,4 +1,4 @@
-package com.github.gannimatt.ecommerce.util;
+package com.github.gannimatt.ecommerce.mapper;
 
 import com.github.gannimatt.ecommerce.dto.ProductRequest;
 import com.github.gannimatt.ecommerce.dto.ProductResponse;
