@@ -8,14 +8,17 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"))
+                .csrf(csrf -> csrf.disable())                  // <-- disable CSRF for dev
                 .headers(h -> h.frameOptions(f -> f.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/h2-console/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .anyRequest().permitAll() // dev-only: open everything
+                        .requestMatchers("/h2-console/**",
+                                "/swagger-ui.html", "/swagger-ui/**",
+                                "/v3/api-docs/**").permitAll()
+                        .anyRequest().permitAll()                    // dev-only: open everything
                 )
                 .httpBasic(Customizer.withDefaults())
                 .formLogin(login -> login.disable());
