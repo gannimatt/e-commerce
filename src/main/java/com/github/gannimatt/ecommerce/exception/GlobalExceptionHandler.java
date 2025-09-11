@@ -1,5 +1,6 @@
 package com.github.gannimatt.ecommerce.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -25,4 +26,12 @@ public class GlobalExceptionHandler {
                 .collect(java.util.stream.Collectors.toMap(fe -> fe.getField(), fe -> fe.getDefaultMessage(), (a,b)->a));
         return ResponseEntity.badRequest().body(Map.of("error", "Validation failed", "fields", errors));
     }
-}
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, Object> handleDataIntegrity(DataIntegrityViolationException ex) {
+        return Map.of(
+                "error", "Data integrity violation",
+                "message", ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage()
+        );
+}}
