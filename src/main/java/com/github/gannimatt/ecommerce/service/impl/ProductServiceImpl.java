@@ -17,6 +17,8 @@ import java.util.List;
 
 import static com.github.gannimatt.ecommerce.mapper.ProductMapper.toEntity;
 import static com.github.gannimatt.ecommerce.mapper.ProductMapper.toResponse;
+import org.springframework.transaction.annotation.Transactional;
+
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -96,9 +98,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ProductResponse> search(String q, Pageable pageable) {
         Page<Product> page = (q == null || q.isBlank())
-                ? repo.findAll(pageable)
+                ? repo.findAllWithCategory(pageable)
                 : repo.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(q, q, pageable);
         return page.map(ProductMapper::toResponse);
     }
