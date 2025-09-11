@@ -9,6 +9,6 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findBySku(String sku);
     // ProductRepository
-    Page<Product> findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(String name, String sku, Pageable pageable);
-
+    Page<Product> findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(
+            String name, String sku, Pageable pageable);
 }

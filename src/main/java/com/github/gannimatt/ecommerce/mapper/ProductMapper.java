@@ -11,9 +11,19 @@ public final class ProductMapper {
         return Product.builder()
                 .sku(r.sku()).name(r.name()).description(r.description()).price(r.price())
                 .build();
-    }
+    } //category will be added in the service after loading the category from DB.
 
     public static ProductResponse toResponse(Product p) {
-        return new ProductResponse(p.getId(), p.getSku(), p.getName(), p.getDescription(), p.getPrice());
+        Long categoryId = (p.getCategory() != null) ? p.getCategory().getId() : null;
+        String categoryName = (p.getCategory() != null) ? p.getCategory().getName() : null;
+        return new ProductResponse(
+                p.getId(),
+                p.getSku(),
+                p.getName(),
+                p.getDescription(),
+                p.getPrice(),
+                categoryId,
+                categoryName
+        );
     }
 }

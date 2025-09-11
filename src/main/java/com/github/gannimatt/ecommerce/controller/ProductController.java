@@ -3,6 +3,7 @@ package com.github.gannimatt.ecommerce.controller;
 import com.github.gannimatt.ecommerce.entity.Product;
 import com.github.gannimatt.ecommerce.service.ProductService;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -50,8 +51,16 @@ public class ProductController {
     @GetMapping
     public Page<ProductResponse> list(
             @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable,
-            @RequestParam(required = false) String q) {
-        return service.search(q, pageable);
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long categoryId) {
+        Page<ProductResponse> page = service.search(q, pageable);
+        if (categoryId == null) return page;
+
+        var filtered = page.getContent().stream()
+                .filter(p -> p.categoryId() != null && p.categoryId().equals(categoryId))
+                .toList();
+
+        return new PageImpl<>(filtered, pageable, filtered.size());
     }
 
 }
