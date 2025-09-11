@@ -53,14 +53,7 @@ public class ProductController {
             @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long categoryId) {
-        Page<ProductResponse> page = service.search(q, pageable);
-        if (categoryId == null) return page;
-
-        var filtered = page.getContent().stream()
-                .filter(p -> p.categoryId() != null && p.categoryId().equals(categoryId))
-                .toList();
-
-        return new PageImpl<>(filtered, pageable, filtered.size());
+        return service.search(q, pageable, categoryId);
     }
 
 }
