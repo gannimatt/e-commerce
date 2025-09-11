@@ -99,10 +99,20 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponse> search(String q, Pageable pageable) {
+    public Page<ProductResponse> search(String q, Pageable pageable, Long categoryId) {
+        if (categoryId != null) {
+            return (q == null || q.isBlank())
+                    ? repo.findByCategory_Id(categoryId, pageable).map(ProductMapper::toResponse)
+                    : repo.findByCategory_IdAndNameContainingIgnoreCaseOrCategory_IdAndSkuContainingIgnoreCase(
+                    categoryId, q, categoryId, q, pageable
+            ).map(ProductMapper::toResponse);
+        }
+
         Page<Product> page = (q == null || q.isBlank())
                 ? repo.findAllWithCategory(pageable)
                 : repo.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(q, q, pageable);
+
         return page.map(ProductMapper::toResponse);
     }
+
 }
