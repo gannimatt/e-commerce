@@ -28,4 +28,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             Long cat1, String name, Long cat2, String sku, Pageable pageable);
 
 
+    long countByCategoryId(Long categoryId);
+
 }
