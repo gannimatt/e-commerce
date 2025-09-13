@@ -33,17 +33,28 @@ public class SecurityConfig {
         http.headers(h -> h.frameOptions(f -> f.sameOrigin())); // for H2 console
 
         http.authorizeHttpRequests(auth -> auth
+                // Public
                 .requestMatchers(
                         "/api/auth/**",
                         "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
                         "/h2-console/**"
                 ).permitAll()
+
+                // Public reads
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/**").hasRole("ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/**").hasRole("ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
+
+                // Cart & Orders: any authenticated user
+                .requestMatchers("/api/cart/**", "/api/orders/**").authenticated()
+
+                // Admin-only writes for product & category management
+                .requestMatchers(org.springframework.http.HttpMethod.POST,   "/api/products/**", "/api/categories/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT,    "/api/products/**", "/api/categories/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/products/**", "/api/categories/**").hasRole("ADMIN")
+
+                // Everything else
                 .anyRequest().authenticated()
         );
+
 
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
