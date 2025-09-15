@@ -21,6 +21,4 @@ public class CartItem {
     @Column(nullable = false)
     private int quantity;
 
-    @Column(nullable = false, precision = 10, scale = 2)  // optional but good
-    private BigDecimal unitPrice;
 }

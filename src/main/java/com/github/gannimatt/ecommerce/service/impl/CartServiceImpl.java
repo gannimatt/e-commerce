@@ -3,6 +3,7 @@ package com.github.gannimatt.ecommerce.service.impl;
 import com.github.gannimatt.ecommerce.dto.CartItemRequest;
 import com.github.gannimatt.ecommerce.dto.CartResponse;
 import com.github.gannimatt.ecommerce.entity.*;
+import com.github.gannimatt.ecommerce.mapper.CartMapper;
 import com.github.gannimatt.ecommerce.repository.CartRepository;
 import com.github.gannimatt.ecommerce.repository.ProductRepository;
 import com.github.gannimatt.ecommerce.service.CartService;
@@ -33,7 +34,7 @@ public class CartServiceImpl implements CartService {
     @Override
     public CartResponse getCart(String email) {
         Cart c = getOrCreate(email);
-        return toResponse(c);
+        return CartMapper.toResponse(c);
     }
 
     @Override
@@ -51,43 +52,22 @@ public class CartServiceImpl implements CartService {
             item.setCart(c);
             item.setProduct(p);
             item.setQuantity(req.quantity());
-            item.setUnitPrice(p.getPrice()); // BigDecimal -> BigDecimal
             c.getItems().add(item);
         } else {
             item.setQuantity(item.getQuantity() + req.quantity());
         }
-        return toResponse(c);
+        return CartMapper.toResponse(c);
     }
 
     @Override
     public CartResponse removeItem(String email, Long productId) {
         Cart c = getOrCreate(email);
         c.getItems().removeIf(i -> i.getProduct().getId().equals(productId));
-        return toResponse(c);
+        return CartMapper.toResponse(c);
     }
 
     @Override
     public void clear(String email) {
         getOrCreate(email).clear();
-    }
-
-    private CartResponse toResponse(Cart c) {
-        var lines = c.getItems().stream().map(i -> {
-            BigDecimal lineTotal = i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity()));
-            return new CartResponse.CartLine(
-                    i.getProduct().getId(),
-                    i.getProduct().getSku(),
-                    i.getProduct().getName(),
-                    i.getQuantity(),
-                    i.getUnitPrice(),
-                    lineTotal
-            );
-        }).collect(Collectors.toList());
-
-        BigDecimal total = lines.stream()
-                .map(CartResponse.CartLine::lineTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        return new CartResponse(total, lines);
     }
 }
