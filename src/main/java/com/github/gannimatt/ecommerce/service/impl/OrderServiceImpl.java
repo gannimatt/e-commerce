@@ -2,6 +2,7 @@ package com.github.gannimatt.ecommerce.service.impl;
 
 import com.github.gannimatt.ecommerce.dto.OrderResponse;
 import com.github.gannimatt.ecommerce.entity.*;
+import com.github.gannimatt.ecommerce.mapper.OrderMapper;
 import com.github.gannimatt.ecommerce.repository.CartRepository;
 import com.github.gannimatt.ecommerce.repository.OrderRepository;
 import com.github.gannimatt.ecommerce.service.OrderService;
@@ -42,8 +43,9 @@ public class OrderServiceImpl implements OrderService {
             oi.setOrder(o);
             oi.setProduct(ci.getProduct());
             oi.setQuantity(ci.getQuantity());
-            oi.setUnitPrice(ci.getUnitPrice()); // BigDecimal
-            oi.setLineTotal(ci.getUnitPrice().multiply(BigDecimal.valueOf(ci.getQuantity())));
+            var price = ci.getProduct().getPrice();
+            oi.setUnitPrice(price);
+            oi.setLineTotal(price.multiply(BigDecimal.valueOf(ci.getQuantity())));
             o.getItems().add(oi);
 
             total = total.add(oi.getLineTotal());
@@ -53,12 +55,12 @@ public class OrderServiceImpl implements OrderService {
 
         orders.save(o);
         cart.clear(); // empty cart after checkout
-        return toResponse(o);
+        return OrderMapper.toResponse(o);
     }
 
     @Override
     public Page<OrderResponse> listMyOrders(String email, Pageable pageable) {
-        return orders.findByUserEmailOrderByCreatedAtDesc(email, pageable).map(this::toResponse);
+        return orders.findByUserEmailOrderByCreatedAtDesc(email, pageable).map(OrderMapper::toResponse);
     }
 
     @Override
@@ -66,20 +68,8 @@ public class OrderServiceImpl implements OrderService {
         Order o = orders.findById(orderId)
                 .filter(or -> or.getUserEmail().equals(email))
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
-        return toResponse(o);
+        return OrderMapper.toResponse(o);
     }
 
-    private OrderResponse toResponse(Order o) {
-        var items = o.getItems().stream().map(oi ->
-                new OrderResponse.OrderLine(
-                        oi.getProduct().getId(),
-                        oi.getProduct().getSku(),
-                        oi.getProduct().getName(),
-                        oi.getQuantity(),
-                        oi.getUnitPrice(),
-                        oi.getLineTotal()
-                )
-        ).collect(Collectors.toList());
-        return new OrderResponse(o.getId(), o.getCreatedAt(), o.getStatus(), o.getTotal(), items);
-    }
+   
 }
