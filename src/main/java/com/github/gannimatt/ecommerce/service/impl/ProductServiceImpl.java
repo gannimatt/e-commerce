@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static com.github.gannimatt.ecommerce.mapper.ProductMapper.toEntity;
@@ -99,20 +100,18 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponse> search(String q, Pageable pageable, Long categoryId) {
-        if (categoryId != null) {
-            return (q == null || q.isBlank())
-                    ? repo.findByCategory_Id(categoryId, pageable).map(ProductMapper::toResponse)
-                    : repo.findByCategory_IdAndNameContainingIgnoreCaseOrCategory_IdAndSkuContainingIgnoreCase(
-                    categoryId, q, categoryId, q, pageable
-            ).map(ProductMapper::toResponse);
+    public Page<ProductResponse> search(String q, Pageable pageable, Long categoryId,
+                                        BigDecimal minPrice, BigDecimal maxPrice) {
+        if (categoryId != null && !categoryRepository.existsById(categoryId)) {
+            throw new IllegalArgumentException("Category not found: " + categoryId);
+        }
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new IllegalArgumentException("minPrice cannot be greater than maxPrice");
         }
 
-        Page<Product> page = (q == null || q.isBlank())
-                ? repo.findAllWithCategory(pageable)
-                : repo.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(q, q, pageable);
-
-        return page.map(ProductMapper::toResponse);
+        return repo.searchProducts(q, categoryId, minPrice, maxPrice, pageable)
+                .map(ProductMapper::toResponse);
     }
+
 
 }

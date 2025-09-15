@@ -2,16 +2,14 @@ package com.github.gannimatt.ecommerce.controller;
 
 import com.github.gannimatt.ecommerce.entity.Product;
 import com.github.gannimatt.ecommerce.service.ProductService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.github.gannimatt.ecommerce.dto.*;
 import jakarta.validation.Valid;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -23,11 +21,6 @@ public class ProductController {
     public ProductController(ProductService service) {
         this.service = service;
     }
-
-//    @GetMapping
-//    public List<ProductResponse> all() {
-//        return service.getAll();
-//    }
 
     @GetMapping("/{id}")
     public ProductResponse getById(@PathVariable Long id) {
@@ -54,11 +47,14 @@ public class ProductController {
     }
 
     @GetMapping
-    public Page<ProductResponse> list(
-            @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable,
-            @RequestParam(required = false) String q,
-            @RequestParam(required = false) Long categoryId) {
-        return service.search(q, pageable, categoryId);
+    public Page<ProductResponse> search(@RequestParam(defaultValue = "0") int page,
+                                      @RequestParam(defaultValue = "10") int size,
+                                      @RequestParam(required = false) String q,
+                                      @RequestParam(required = false) Long categoryId,
+                                      @RequestParam(required = false) BigDecimal minPrice,
+                                      @RequestParam(required = false) BigDecimal maxPrice,
+                                      Pageable pageable) {
+        Pageable effectivePageable = PageRequest.of(page, size, pageable.getSort());
+        return service.search(q, effectivePageable, categoryId, minPrice, maxPrice);
     }
-
 }
