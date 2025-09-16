@@ -1,17 +1,16 @@
 package com.github.gannimatt.ecommerce.controller;
 
-import com.github.gannimatt.ecommerce.entity.Product;
 import com.github.gannimatt.ecommerce.service.ProductService;
 import org.springframework.data.domain.*;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.github.gannimatt.ecommerce.dto.*;
 import jakarta.validation.Valid;
-
 import java.math.BigDecimal;
-import java.util.List;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.springframework.security.access.prepost.PreAuthorize;
 
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
