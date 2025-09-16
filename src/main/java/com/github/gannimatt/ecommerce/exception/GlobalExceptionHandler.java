@@ -1,63 +1,82 @@
 package com.github.gannimatt.ecommerce.exception;
 
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
+import com.github.gannimatt.ecommerce.dto.ApiError;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.Instant;
+import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, Object> handleValidationErrors(MethodArgumentNotValidException ex) {
-        Map<String, String> fieldErrors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(err ->
-                fieldErrors.put(err.getField(), err.getDefaultMessage()));
-        return Map.of("error", "Validation failed", "fields", fieldErrors);
+    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
+        return response(HttpStatus.BAD_REQUEST, "Validation failed", compactBinding(ex.getBindingResult()), req);
     }
 
-    @ExceptionHandler(NotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, Object> handleNotFound(NotFoundException ex) {
-        return Map.of("error", ex.getMessage());
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, Object> handleDataIntegrity(DataIntegrityViolationException ex) {
-        return Map.of("error", ex.getMostSpecificCause().getMessage());
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
+        var details = ex.getConstraintViolations().stream()
+                .map(v -> new ApiError.FieldError(v.getPropertyPath().toString(), v.getMessage()))
+                .toList();
+        return response(HttpStatus.BAD_REQUEST, "Validation failed", details, req);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, Object> handleIllegalArgument(IllegalArgumentException ex) {
-        return Map.of("error", ex.getMessage());
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest req) {
+        return response(HttpStatus.BAD_REQUEST, ex.getMessage(), null, req);
     }
 
-    // Invalid sort/query fields
-    @ExceptionHandler({
-            org.hibernate.query.sqm.UnknownPathException.class,
-            org.hibernate.QueryException.class,
-            org.hibernate.query.SemanticException.class,
-            InvalidDataAccessApiUsageException.class,
-            jakarta.persistence.PersistenceException.class
-    })
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, Object> handleQueryErrors(Exception ex) {
-        return Map.of("error", "Invalid sort field");
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex, HttpServletRequest req) {
+        return response(HttpStatus.BAD_REQUEST, ex.getMessage(), null, req);
     }
 
-    // Generic fallback
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiError> handleNotFound(NotFoundException ex, HttpServletRequest req) {
+        return response(HttpStatus.NOT_FOUND, ex.getMessage(), null, req);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiError> handleBadCreds(BadCredentialsException ex, HttpServletRequest req) {
+        return response(HttpStatus.UNAUTHORIZED, "Invalid credentials", null, req);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
+        return response(HttpStatus.FORBIDDEN, "Access denied", null, req);
+    }
+
+    // Fallback — don’t leak internals
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Map<String, Object> handleGeneric(Exception ex) {
-        return Map.of("error", "Unexpected server error");
+    public ResponseEntity<ApiError> handleAny(Exception ex, HttpServletRequest req) {
+        return response(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error", null, req);
+    }
+
+    private ResponseEntity<ApiError> response(HttpStatus status, String message, List<ApiError.FieldError> details, HttpServletRequest req) {
+        var err = new ApiError(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                message,
+                req.getRequestURI(),
+                details
+        );
+        return ResponseEntity.status(status).body(err);
+    }
+
+    private List<ApiError.FieldError> compactBinding(BindingResult br) {
+        return br.getFieldErrors().stream()
+                .map(f -> new ApiError.FieldError(f.getField(), f.getDefaultMessage()))
+                .toList();
     }
 }
