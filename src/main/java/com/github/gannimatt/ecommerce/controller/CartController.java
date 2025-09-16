@@ -4,12 +4,15 @@ import com.github.gannimatt.ecommerce.dto.CartItemRequest;
 import com.github.gannimatt.ecommerce.dto.CartResponse;
 import com.github.gannimatt.ecommerce.service.CartService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-@RestController @RequestMapping("/api/cart") @Tag(name = "Cart")
+@SecurityRequirement(name = "bearerAuth")
+@RestController
+@RequestMapping("/api/cart") @Tag(name = "Cart")
 public class CartController {
     private final CartService service;
     public CartController(CartService service) { this.service = service; }
