@@ -6,6 +6,7 @@ import com.github.gannimatt.ecommerce.mapper.OrderMapper;
 import com.github.gannimatt.ecommerce.repository.CartRepository;
 import com.github.gannimatt.ecommerce.repository.OrderRepository;
 import com.github.gannimatt.ecommerce.service.OrderService;
+import com.github.gannimatt.ecommerce.service.PaymentService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,42 +21,61 @@ import java.util.stream.Collectors;
 public class OrderServiceImpl implements OrderService {
     private final CartRepository carts;
     private final OrderRepository orders;
+    private final PaymentService payment;
 
-    public OrderServiceImpl(CartRepository carts, OrderRepository orders) {
-        this.carts = carts; this.orders = orders;
+    public OrderServiceImpl(CartRepository carts, OrderRepository orders, PaymentService payment) {
+        this.carts = carts;
+        this.orders = orders;
+        this.payment = payment;
     }
 
     @Override
+    @Transactional
     public OrderResponse checkout(String email) {
         Cart cart = carts.findByUserEmail(email)
-                .orElseThrow(() -> new IllegalStateException("Cart empty"));
-        if (cart.getItems().isEmpty()) throw new IllegalStateException("Cart empty");
+                .orElseThrow(() -> new IllegalStateException("Cart not found"));
 
-        Order o = new Order();
-        o.setUserEmail(email);
-        o.setCreatedAt(Instant.now());
-        o.setStatus(OrderStatus.PAID); // mock payment success
-
-        BigDecimal total = BigDecimal.ZERO;
-
-        for (var ci : cart.getItems()) {
-            OrderItem oi = new OrderItem();
-            oi.setOrder(o);
-            oi.setProduct(ci.getProduct());
-            oi.setQuantity(ci.getQuantity());
-            var price = ci.getProduct().getPrice();
-            oi.setUnitPrice(price);
-            oi.setLineTotal(price.multiply(BigDecimal.valueOf(ci.getQuantity())));
-            o.getItems().add(oi);
-
-            total = total.add(oi.getLineTotal());
+        if (cart.getItems().isEmpty()) {
+            throw new IllegalStateException("Cart is empty");
         }
 
-        o.setTotal(total);
+        Order order = new Order();
+        order.setUserEmail(email);
+        order.setCreatedAt(Instant.now());
+        order.setStatus(OrderStatus.PENDING_PAYMENT);
 
-        orders.save(o);
-        cart.clear(); // empty cart after checkout
-        return OrderMapper.toResponse(o);
+        // Snapshot the current product data into order items
+        var orderItems = cart.getItems().stream().map(ci -> {
+            Product p = ci.getProduct();
+
+            OrderItem oi = new OrderItem();
+            oi.setOrder(order);
+            oi.setProduct(p);
+            oi.setQuantity(ci.getQuantity());
+
+            BigDecimal unit = p.getPrice();   // snapshot unit price at time of checkout
+            oi.setUnitPrice(unit);
+            oi.setLineTotal(unit.multiply(BigDecimal.valueOf(ci.getQuantity())));
+            return oi;
+        }).collect(Collectors.toList());
+
+        order.setItems(orderItems);
+        order.setTotal(orderItems.stream()
+                .map(OrderItem::getLineTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        //Mock payment processing
+        boolean paid = payment.processPayment(email, order.getTotal());
+        order.setStatus(paid ? OrderStatus.PAID : OrderStatus.PENDING_PAYMENT);
+
+        // Persist order
+        Order saved = orders.save(order);
+
+        // Clear cart after successful order creation
+        cart.clear();
+        carts.save(cart);
+
+        return OrderMapper.toResponse(saved);
     }
 
     @Override
