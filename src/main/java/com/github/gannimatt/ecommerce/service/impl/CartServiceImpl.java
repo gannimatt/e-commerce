@@ -38,25 +38,33 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
+    @Transactional
     public CartResponse addItem(String email, CartItemRequest req) {
-        Cart c = getOrCreate(email);
-        Product p = products.findById(req.productId())
+
+        Cart cart = getOrCreate(email);
+
+        Product product = products.findById(req.productId())
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
-        CartItem item = c.getItems().stream()
-                .filter(i -> i.getProduct().getId().equals(p.getId()))
-                .findFirst().orElse(null);
+        // Merge by product id
+        CartItem existing = cart.getItems().stream()
+                .filter(i -> i.getProduct().getId().equals(product.getId()))
+                .findFirst()
+                .orElse(null);
 
-        if (item == null) {
-            item = new CartItem();
-            item.setCart(c);
-            item.setProduct(p);
-            item.setQuantity(req.quantity());
-            c.getItems().add(item);
+        if (existing != null) {
+            existing.setQuantity(existing.getQuantity() + req.quantity());
         } else {
-            item.setQuantity(item.getQuantity() + req.quantity());
+            CartItem item = new CartItem();
+            item.setCart(cart);
+            item.setProduct(product);
+            item.setQuantity(req.quantity());
+            cart.getItems().add(item);
         }
-        return CartMapper.toResponse(c);
+
+        // Persist & return current view (totals computed in CartMapper)
+        carts.save(cart);
+        return CartMapper.toResponse(cart);
     }
 
     @Override
