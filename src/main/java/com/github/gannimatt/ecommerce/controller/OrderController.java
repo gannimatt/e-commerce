@@ -8,19 +8,29 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-@RestController @RequestMapping("/api/orders") @Tag(name = "Orders")
+@RestController
+@RequestMapping("/api/orders") @Tag(name = "Orders")
 public class OrderController {
+
     private final OrderService service;
-    public OrderController(OrderService service) { this.service = service; }
 
-    private String email() { return (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal(); }
+    public OrderController(OrderService service) {
+        this.service = service;
+    }
+
+    private String email() {
+        return (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
-    @PostMapping("/checkout") public OrderResponse checkout() { return service.checkout(email()); }
+    @PostMapping("/checkout")
+    public OrderResponse checkout() { return service.checkout(email()); }
 
     @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
-    @GetMapping public Page<OrderResponse> myOrders(Pageable pageable) { return service.listMyOrders(email(), pageable); }
+    @GetMapping
+    public Page<OrderResponse> myOrders(Pageable pageable) { return service.listMyOrders(email(), pageable); }
 
     @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
-    @GetMapping("/{id}") public OrderResponse get(@PathVariable Long id) { return service.getMyOrder(email(), id); }
+    @GetMapping("/{id}")
+    public OrderResponse get(@PathVariable Long id) { return service.getMyOrder(email(), id); }
 }
