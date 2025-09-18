@@ -8,7 +8,6 @@ import com.github.gannimatt.ecommerce.dto.*;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 @SecurityRequirement(name = "bearerAuth")
 @RestController
