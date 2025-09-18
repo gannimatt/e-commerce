@@ -10,3 +10,8 @@ spring:
     show-sql: false
   flyway:
     enabled: false           # avoid validation vs migrations in tests
+
+app:
+  jwt:
+    secret: test-secret
+    expiration-ms: 3600000
