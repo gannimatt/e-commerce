@@ -1,0 +1,10 @@
+target/
+.mvn/
+.idea/
+*.iml
+*.ipr
+*.iws
+.git/
+.gitignore
+.env
+node_modules/
