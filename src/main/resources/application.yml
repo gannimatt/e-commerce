@@ -6,7 +6,7 @@ spring:
     name: ecommerce
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
@@ -20,7 +20,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        default_schema: ecommerce
         jdbc:
           time_zone: UTC
 
