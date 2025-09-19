@@ -149,4 +149,4 @@ mvn -B -ntp clean verify
 - Simple frontend (React/Angular) to consume this API
 
 ## License
-MIT (or your preferred license)
+[MIT](LICENSE)
