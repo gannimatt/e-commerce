@@ -16,4 +16,4 @@ jobs:
           java-version: 21
           cache: maven
       - name: Build & test
-        run: mvn -B -ntp clean verify
+        run:  mvn -B -ntp -Dspring.profiles.active=test clean verify
